@@ -17,15 +17,38 @@ export async function POST(req: Request) {
     const { userId, userName, matchId, prediction } = await req.json()
 
     if (!userId || !matchId || !prediction || !userName) {
-      return NextResponse.json({ error: "Missing data" }, { status: 400 })
+      return NextResponse.json({ error: "Missing required data" }, { status: 400 })
     }
 
-    const newPrediction = await prisma.prediction.create({
-      data: { userId, userName, matchId, prediction },
+    // Check if prediction already exists for this user and match
+    const existingPrediction = await prisma.prediction.findFirst({
+      where: {
+        userId,
+        matchId,
+      },
     })
 
-    return NextResponse.json({ message: "Prediction saved!", prediction: newPrediction })
+    let result;
+    
+    if (existingPrediction) {
+      // Update existing prediction
+      result = await prisma.prediction.update({
+        where: { id: existingPrediction.id },
+        data: { prediction },
+      })
+    } else {
+      // Create new prediction
+      result = await prisma.prediction.create({
+        data: { userId, userName, matchId, prediction },
+      })
+    }
+
+    return NextResponse.json({ 
+      message: existingPrediction ? "Prediction updated!" : "Prediction saved!", 
+      prediction: result 
+    })
   } catch (error) {
+    console.error("Error saving prediction:", error)
     return NextResponse.json({ error: "Failed to save prediction" }, { status: 500 })
   }
 }

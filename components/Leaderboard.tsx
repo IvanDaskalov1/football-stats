@@ -1,67 +1,100 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
-interface UserScore {
-  userId: string
-  userName: string
-  totalScore: number
-}
+import { Match, Prediction, UserScore } from "@/types"
 
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<UserScore[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchPredictions() {
+    async function fetchData() {
       try {
-        const res = await fetch("/api/predictions")
-        const data = await res.json()
+        // Fetch predictions
+        const predictionsRes = await fetch("/api/predictions")
+        const predictionsData = await predictionsRes.json()
+        const predictions: Prediction[] = predictionsData.predictions || []
 
-        // Fetch actual match results
-        const resultsRes = await fetch("/api/matches")
-        const resultsData = await resultsRes.json()
+        // Fetch matches to get results
+        const matchesRes = await fetch("/api/matches")
+        const matchesData = await matchesRes.json()
+        const matches: Match[] = matchesData.matches || []
 
-        const matchResults = resultsData.matches.reduce((acc: any, match: any) => {
-          acc[match.id] = match.score.fullTime
+        // Create a map of match results for quick lookup
+        const matchResults = matches.reduce((acc: Record<number, any>, match: Match) => {
+          // Only include finished matches
+          if (match.status === "FINISHED" && match.score?.fullTime?.home !== null && match.score?.fullTime?.away !== null) {
+            acc[match.id] = {
+              home: match.score.fullTime.home,
+              away: match.score.fullTime.away
+            }
+          }
           return acc
         }, {})
 
-        // Calculate scores
+        // Calculate scores for each user
         const userScores: Record<string, UserScore> = {}
 
-        data.predictions.forEach((p: any) => {
-          if (!userScores[p.userId]) {
-            userScores[p.userId] = { userId: p.userId, userName: p.userName, totalScore: 0 }
+        predictions.forEach((prediction: Prediction) => {
+          // Initialize user if not already in the map
+          if (!userScores[prediction.userId]) {
+            userScores[prediction.userId] = { 
+              userId: prediction.userId, 
+              userName: prediction.userName, 
+              totalScore: 0,
+              correctScores: 0,
+              correctOutcomes: 0
+            }
           }
 
-          if (matchResults[p.matchId]) {
-            const actualScore = matchResults[p.matchId]
-            const [predHome, predAway] = p.prediction.split("-").map(Number)
-
+          // Only calculate points if the match is finished and has a result
+          if (matchResults[prediction.matchId]) {
+            const actualResult = matchResults[prediction.matchId]
+            
+            // Parse prediction (format: "2-1")
+            const [predHome, predAway] = prediction.prediction.split("-").map(Number)
+            
+            // Skip invalid predictions
+            if (isNaN(predHome) || isNaN(predAway)) return
+            
+            // Calculate points:
+            // 3 points for exact score
+            // 1 point for correct outcome (win/loss/draw)
             let points = 0
-            if (predHome === actualScore.homeTeam && predAway === actualScore.awayTeam) {
+            const user = userScores[prediction.userId]; // Store reference to avoid undefined
+            
+            // Exact score match
+            if (predHome === actualResult.home && predAway === actualResult.away) {
               points = 3
-            } else if (
-              (predHome > predAway && actualScore.homeTeam > actualScore.awayTeam) ||
-              (predHome < predAway && actualScore.homeTeam < actualScore.awayTeam)
+              user.correctScores += 1;
+            } 
+            // Correct outcome
+            else if (
+              (predHome > predAway && actualResult.home > actualResult.away) || // Home win
+              (predHome < predAway && actualResult.home < actualResult.away) || // Away win
+              (predHome === predAway && actualResult.home === actualResult.away) // Draw
             ) {
               points = 1
+              user.correctOutcomes += 1;
             }
 
-            userScores[p.userId].totalScore += points
+            user.totalScore += points;
           }
         })
 
-        setLeaderboard(Object.values(userScores).sort((a, b) => b.totalScore - a.totalScore))
+        // Sort by total score (descending)
+        const sortedLeaderboard = Object.values(userScores)
+          .sort((a, b) => b.totalScore - a.totalScore)
+        
+        setLeaderboard(sortedLeaderboard)
       } catch (error) {
-        console.error(error)
+        console.error("Error fetching leaderboard data:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchPredictions()
+    fetchData()
   }, [])
 
   return (
@@ -69,18 +102,34 @@ export default function Leaderboard() {
       <h2 className="text-xl font-semibold mb-4">🏆 Prediction Leaderboard</h2>
 
       {loading ? (
-        <p>Loading...</p>
+        <p>Loading leaderboard...</p>
       ) : leaderboard.length === 0 ? (
-        <p>No predictions yet.</p>
+        <p>No predictions yet. Be the first to predict!</p>
       ) : (
-        <ul className="space-y-2">
-          {leaderboard.map((user, index) => (
-            <li key={index} className="border p-3 bg-white rounded shadow-sm flex justify-between">
-              <span className="text-gray-700">🔹 {user.userName}</span>
-              <span className="font-semibold">{user.totalScore} pts</span>
-            </li>
-          ))}
-        </ul>
+        <div>
+          <div className="grid grid-cols-4 font-semibold mb-2 text-sm">
+            <span>Player</span>
+            <span className="text-center">Exact Scores</span>
+            <span className="text-center">Correct Results</span>
+            <span className="text-right">Total Points</span>
+          </div>
+          <ul className="space-y-2">
+            {leaderboard.map((user, index) => (
+              <li key={user.userId} className="border p-3 bg-white rounded shadow-sm grid grid-cols-4 items-center">
+                <span className="text-gray-700">
+                  {index === 0 && "🥇 "}
+                  {index === 1 && "🥈 "}
+                  {index === 2 && "🥉 "}
+                  {index > 2 && `${index + 1}. `}
+                  {user.userName}
+                </span>
+                <span className="text-center text-green-600">{user.correctScores || 0}</span>
+                <span className="text-center text-blue-600">{user.correctOutcomes || 0}</span>
+                <span className="font-semibold text-right">{user.totalScore} pts</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   )

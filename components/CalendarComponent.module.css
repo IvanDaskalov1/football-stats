@@ -6,6 +6,7 @@
     border-radius: 8px !important;
     padding: 10px !important;
     font-family: inherit !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
   }
   
   /* Ensure normal text color for all tiles */
@@ -28,4 +29,26 @@
     color: white !important;
     font-weight: bold !important;
     border-radius: 6px !important;
+  }
+
+  /* Make sure the calendar is responsive */
+  @media (max-width: 768px) {
+    .calendar {
+      font-size: 0.9rem !important;
+    }
+  }
+
+  /* Make month label and navigation buttons black */
+  .calendar :global(.react-calendar__navigation button) {
+    color: black !important;
+    font-weight: 500 !important;
+  }
+  
+  .calendar :global(.react-calendar__navigation__label) {
+    color: black !important;
+    font-weight: 600 !important;
+  }
+
+  .calendar :global(.react-calendar__month-view__weekdays__weekday) {
+    color: black !important;
   }

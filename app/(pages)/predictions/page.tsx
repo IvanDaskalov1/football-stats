@@ -4,39 +4,53 @@ import { useEffect, useState } from "react"
 import { useUser } from "@clerk/nextjs"
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs"
 import Leaderboard from "@/components/Leaderboard"
+import { Match, Prediction } from "@/types"
 
 export default function PredictionsPage() {
     const { user } = useUser()
-    const [matches, setMatches] = useState<any[]>([])
-    const [predictions, setPredictions] = useState<any[]>([])
+    const [matches, setMatches] = useState<Match[]>([])
+    const [userPredictions, setUserPredictions] = useState<Record<number, string>>({})
     const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
+    const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
     useEffect(() => {
-        async function fetchMatches() {
+        async function fetchData() {
             try {
-                const res = await fetch("/api/matches")
-                const data = await res.json()
-                setMatches(data.matches)
+                // Fetch matches
+                const matchesRes = await fetch("/api/matches")
+                const matchesData = await matchesRes.json()
+                
+                // Sort matches by date (upcoming first)
+                const sortedMatches = matchesData.matches.sort((a: Match, b: Match) => 
+                    new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+                )
+                setMatches(sortedMatches)
+                
+                // Only fetch predictions if user is logged in
+                if (user) {
+                    const predictionsRes = await fetch("/api/predictions")
+                    const predictionsData = await predictionsRes.json()
+                    
+                    // Filter predictions for current user and create a map of matchId -> prediction
+                    const userPreds = predictionsData.predictions
+                        .filter((p: Prediction) => p.userId === user.id)
+                        .reduce((acc: Record<number, string>, p: Prediction) => {
+                            acc[p.matchId] = p.prediction
+                            return acc
+                        }, {})
+                    
+                    setUserPredictions(userPreds)
+                }
             } catch (error) {
-                console.error("Error fetching matches:", error)
-            }
-        }
-
-        async function fetchPredictions() {
-            try {
-                const res = await fetch("/api/predictions")
-                const data = await res.json()
-                setPredictions(data.predictions)
-            } catch (error) {
-                console.error("Error fetching predictions:", error)
+                console.error("Error fetching data:", error)
             } finally {
                 setLoading(false)
             }
         }
 
-        fetchMatches()
-        fetchPredictions()
-    }, [])
+        fetchData()
+    }, [user])
 
     const handlePredictionSubmit = async (matchId: number, prediction: string) => {
         if (!user) return alert("You must be signed in to submit predictions!")
@@ -45,14 +59,20 @@ export default function PredictionsPage() {
             return alert("Prediction cannot be empty!")
         }
 
+        // Validate prediction format (e.g., "2-1")
+        if (!/^\d+-\d+$/.test(prediction)) {
+            return alert("Prediction must be in format '0-0'")
+        }
+
+        setSubmitting(true)
+        setSuccessMessage(null)
+
         const payload = {
             userId: user.id,
-            userName: user.firstName,
+            userName: user.firstName || user.username || "User",
             matchId,
             prediction,
         }
-
-        console.log("Sending payload:", payload) // ✅ Check if data is correct before sending
 
         try {
             const res = await fetch("/api/predictions", {
@@ -68,67 +88,112 @@ export default function PredictionsPage() {
             }
 
             const data = await res.json()
-            console.log("Prediction saved:", data)
-
-            setPredictions([...predictions, { matchId, prediction }])
+            
+            // Update local state with the new prediction
+            setUserPredictions(prev => ({
+                ...prev,
+                [matchId]: prediction
+            }))
+            
+            setSuccessMessage("Prediction saved successfully!")
+            
+            // Clear success message after 3 seconds
+            setTimeout(() => setSuccessMessage(null), 3000)
         } catch (error) {
             console.error(error)
+            alert("Failed to save prediction. Please try again.")
+        } finally {
+            setSubmitting(false)
         }
     }
 
+    // Filter to show only upcoming matches
+    const upcomingMatches = matches.filter(match => 
+        match.status !== "FINISHED" && match.status !== "IN_PLAY"
+    )
+
     return (
-        <main className="p-6">
+        <main className="p-6 max-w-6xl mx-auto">
             <h1 className="text-2xl font-bold mb-4">Predictions</h1>
-            <Leaderboard />
-            <SignedOut>
-                <p>You must be signed in to make predictions.</p>
-                <SignInButton />
-            </SignedOut>
+            
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* Left side - Prediction Form */}
+                <div className="w-full md:w-2/3">
+                    <SignedOut>
+                        <div className="p-4 bg-gray-100 rounded-lg">
+                            <p className="mb-3">You must be signed in to make predictions.</p>
+                            <SignInButton mode="modal">
+                                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                                    Sign In to Predict
+                                </button>
+                            </SignInButton>
+                        </div>
+                    </SignedOut>
 
-            <SignedIn>
-                {loading && <p>Loading...</p>}
-                {!loading && matches.length === 0 && <p>No upcoming matches.</p>}
+                    <SignedIn>
+                        <div>
+                            <h2 className="text-xl font-semibold mb-3">Make Your Predictions</h2>
+                            
+                            {successMessage && (
+                                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                                    {successMessage}
+                                </div>
+                            )}
+                            
+                            {loading && <p className="text-gray-600">Loading matches...</p>}
+                            
+                            {!loading && upcomingMatches.length === 0 && (
+                                <p className="text-gray-600">No upcoming matches available for predictions.</p>
+                            )}
 
-                {!loading && matches.length > 0 && (
-                    <ul>
-                        {matches.map((match) => (
-                            <li key={match.id} className="border p-4 mb-2 flex justify-between items-center">
-                                <div>
-                                    {match.homeTeam.name} vs {match.awayTeam.name} - {new Date(match.utcDate).toLocaleString()}
-                                </div>
-                                <div>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter prediction (e.g. 2-1)"
-                                        className="border p-2 mr-2"
-                                        value={predictions.find((p) => p.matchId === match.id)?.prediction || ""}
-                                        onChange={(e) => {
-                                            const value = e.target.value
-                                            setPredictions((prev) => {
-                                                const existing = prev.find((p) => p.matchId === match.id)
-                                                if (existing) {
-                                                    return prev.map((p) => (p.matchId === match.id ? { ...p, prediction: value } : p))
-                                                } else {
-                                                    return [...prev, { matchId: match.id, prediction: value }]
-                                                }
-                                            })
-                                        }}
-                                    />
-                                    <button
-                                        onClick={() => {
-                                            const prediction = predictions.find((p) => p.matchId === match.id)?.prediction || ""
-                                            handlePredictionSubmit(match.id, prediction)
-                                        }}
-                                        className="bg-blue-500 text-white px-3 py-1 rounded"
-                                    >
-                                        Submit
-                                    </button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </SignedIn>
+                            {!loading && upcomingMatches.length > 0 && (
+                                <ul className="space-y-4">
+                                    {upcomingMatches.map((match) => (
+                                        <li key={match.id} className="border p-4 rounded-lg shadow-sm bg-white">
+                                            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                                                <div>
+                                                    <div className="font-semibold text-lg text-black">
+                                                        {match.homeTeam.name} vs {match.awayTeam.name}
+                                                    </div>
+                                                    <div className="text-sm text-gray-600">
+                                                        {new Date(match.utcDate).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 2-1"
+                                                        className="border border-black p-2 rounded w-24 text-center text-gray-700"
+                                                        value={userPredictions[match.id] || ""}
+                                                        onChange={(e) => {
+                                                            setUserPredictions(prev => ({
+                                                                ...prev,
+                                                                [match.id]: e.target.value
+                                                            }))
+                                                        }}
+                                                    />
+                                                    <button
+                                                        onClick={() => handlePredictionSubmit(match.id, userPredictions[match.id] || "")}
+                                                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:bg-blue-300"
+                                                        disabled={submitting}
+                                                    >
+                                                        {submitting ? "Saving..." : "Submit"}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </SignedIn>
+                </div>
+                
+                {/* Right side - Leaderboard */}
+                <div className="w-full md:w-1/3 mt-6 md:mt-0">
+                    <Leaderboard />
+                </div>
+            </div>
         </main>
     )
 }
