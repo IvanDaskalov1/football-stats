@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import CalendarComponent from "@/components/CalendarComponent"
 import { Match } from "@/types"
-
+import MatchCard from "@/components/MatchCard"
 
 export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([])
@@ -64,70 +64,70 @@ export default function MatchesPage() {
   }
 
   return (
-    <main className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Upcoming Matches</h1>
-      
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Matches list - takes more space on larger screens */}
-        <div className="w-full md:w-2/3">
-          {loading && <p className="text-gray-600">Loading matches...</p>}
-          {error && <p className="text-red-600">{error}</p>}
-          
-          {selectedDate && (
-            <div className="mb-4 flex items-center">
-              <p className="text-blue-600 font-medium">
-                Showing matches for: {selectedDate.toLocaleDateString()}
-              </p>
-              <button 
-                onClick={clearDateFilter}
-                className="ml-3 text-sm text-gray-600 hover:text-gray-900 underline"
-              >
-                Clear filter
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && filteredMatches.length === 0 && (
-            <p className="text-gray-600">
-              {selectedDate 
-                ? `No matches found for ${selectedDate.toLocaleDateString()}.` 
-                : "No matches available at the moment."}
-            </p>
-          )}
-
-          <div className="space-y-4">
-            {filteredMatches.map(match => (
-              <div key={match.id} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-center">
-                  <div className="flex-1">
-                    <p className="font-semibold">{match.homeTeam.name} vs {match.awayTeam.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(match.utcDate).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="text-lg">
-                    {match.status === "FINISHED" ? (
-                      <span className="text-green-600">
-                        {match.score.fullTime.home} - {match.score.fullTime.away}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">Upcoming</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-blue-800 mb-2">Football Matches</h1>
+          <p className="text-blue-600">View upcoming and past matches from top leagues</p>
         </div>
         
-        {/* Calendar - positioned on the right side */}
-        <div className="w-full md:w-1/3 mt-6 md:mt-0">
-          <div className="sticky top-4">
-            <h2 className="text-lg font-semibold mb-2">Match Calendar</h2>
-            <CalendarComponent onDateSelect={handleDateSelect} selectedDate={selectedDate} matches={matches} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+              <h2 className="text-xl font-semibold mb-4 text-blue-700">Select Date</h2>
+              <CalendarComponent 
+                matches={matches} 
+                selectedDate={selectedDate} 
+                onDateSelect={handleDateSelect} 
+              />
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-md p-4">
+              <h2 className="text-xl font-semibold mb-4 text-blue-700">Filter Matches</h2>
+              {/* ... existing filter controls ... */}
+            </div>
+          </div>
+          
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-blue-700">
+                  {selectedDate ? (
+                    `Matches on ${selectedDate.toLocaleDateString()}`
+                  ) : (
+                    "All Matches"
+                  )}
+                </h2>
+                {/* ... existing controls ... */}
+              </div>
+              
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : filteredMatches.length === 0 ? (
+                <div className="text-center py-12 bg-blue-50 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-blue-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <p className="text-lg text-blue-700 font-medium">No matches found for this date</p>
+                  <p className="text-blue-500 mt-2">Try selecting a different date or adjusting your filters</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredMatches.map((match) => (
+                    <MatchCard key={match.id} match={match} />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </main>
+      
+      {/* Decorative elements */}
+      <div className="fixed -bottom-24 -left-24 w-64 h-64 bg-blue-200 rounded-full opacity-50 blur-3xl"></div>
+      <div className="fixed -top-32 -right-32 w-96 h-96 bg-blue-300 rounded-full opacity-40 blur-3xl"></div>
+    </div>
   )
 }

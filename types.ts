@@ -1,18 +1,23 @@
+export interface Team {
+  name: string;
+  crest?: string;
+}
+
 export interface Match {
   id: number;
   utcDate: string;
-  homeTeam: {
-    name: string;
-  };
-  awayTeam: {
-    name: string;
-  };
   status: string;
+  homeTeam: Team;
+  awayTeam: Team;
   score: {
     fullTime: {
       home: number | null;
       away: number | null;
     }
+  };
+  competition?: {
+    name: string;
+    emblem?: string;
   };
 }
 
