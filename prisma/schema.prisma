@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Prediction {
+  id         String  @id @default(uuid())
+  userId     String
+  userName   String
+  matchId    Int
+  prediction String
+  score      Int     @default(0) // New field to store user's score
+  createdAt  DateTime @default(now())
+}

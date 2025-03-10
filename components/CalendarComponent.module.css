@@ -1,0 +1,31 @@
+.calendar {
+    width: 100% !important;
+    max-width: 100% !important;
+    background-color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    font-family: inherit !important;
+  }
+  
+  /* Ensure normal text color for all tiles */
+  .react-calendar__tile {
+    color: black !important; /* Ensures readable text */
+    border-radius: 6px !important;
+    transition: background 0.2s ease-in-out !important;
+  }
+  
+  /* Highlight the selected date */
+  .react-calendar__tile--active {
+    background: #2563eb !important;
+    color: white !important;
+    font-weight: bold !important;
+  }
+  
+  /* Ensure text is white inside matchDay tiles */
+  .matchDay {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    font-weight: bold !important;
+    border-radius: 6px !important;
+  }
