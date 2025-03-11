@@ -1,9 +1,12 @@
 "use client"
 
 import Link from 'next/link';
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, useAuth } from "@clerk/nextjs";
 import './animations.css'; // Import the CSS file
+import { useEffect } from 'react';
 
+  
+  
 // Sample news data
 const footballNews = [
   {
@@ -51,6 +54,26 @@ const footballNews = [
 ];
 
 export default function Home() {
+  const { isSignedIn, userId, isLoaded } = useAuth();
+
+  useEffect(() => {
+
+    if (!isLoaded) {
+      console.log("⏳ Clerk is not yet loaded...");
+      return;
+    }
+
+    if (isSignedIn) {
+      console.log(`✅ User signed in (ID: ${userId}), calling /api/auth/user-check...`);
+
+      fetch("/api/auth/user-check")
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("✅ User check response:", data);
+        })
+        .catch((error) => console.error("❌ Error checking user:", error));
+    }
+  }, [isSignedIn, userId, isLoaded]);
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-6xl mx-auto p-6">
