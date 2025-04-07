@@ -38,3 +38,10 @@ export interface UserScore {
   correctScores: number;
   correctOutcomes: number;
 } 
+
+export interface User {
+  id: string
+  email: string
+  role?: string
+  createdAt?: string
+}

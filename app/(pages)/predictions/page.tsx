@@ -88,7 +88,7 @@ export default function PredictionsPage() {
             }
 
             const data = await res.json()
-            
+            console.log("Prediction saved response:", data)
             // Update local state with the new prediction
             setUserPredictions(prev => ({
                 ...prev,

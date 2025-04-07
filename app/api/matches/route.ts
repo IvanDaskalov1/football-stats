@@ -34,8 +34,9 @@ export async function GET(request: Request) {
       try {
         const errorData = await res.json();
         console.error("API Error Details:", errorData);
-      } catch (e) {
+      } catch (error) {
         // Ignore if we can't parse error response
+        console.log(error)
       }
       
       return NextResponse.json({ 

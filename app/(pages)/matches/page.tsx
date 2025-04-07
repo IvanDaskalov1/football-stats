@@ -22,8 +22,12 @@ export default function MatchesPage() {
         const matchesData = Array.isArray(data.matches) ? data.matches : []
         setMatches(matchesData)
         setFilteredMatches(matchesData) // Initially show all matches
-      } catch (error: any) {
-        setError(error.message)
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message)
+        } else {
+          setError("An unknown error occurred")
+        }
       } finally {
         setLoading(false)
       }
@@ -100,7 +104,19 @@ export default function MatchesPage() {
                 </h2>
                 {/* ... existing controls ... */}
               </div>
-              
+              {error && (
+                <div className="text-red-600 font-medium my-4">
+                    ⚠️ {error}
+                </div>
+              )}
+              {selectedDate && (
+                <button
+                onClick={clearDateFilter}
+                className="text-sm text-blue-600 underline mt-2"
+                >
+                  Clear Date Filter
+                </button>
+              )}
               {loading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

@@ -1,7 +1,6 @@
 // components/MatchCard.tsx – Компонент за показване на един мач
 import React from 'react'
 import { Match } from "@/types"
-import Image from "next/image"
 
 interface MatchCardProps {
   match: Match

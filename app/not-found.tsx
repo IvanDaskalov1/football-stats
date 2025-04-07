@@ -11,8 +11,8 @@ export default function NotFound() {
   useEffect(() => {
     const interval = setInterval(() => {
       setBallPosition(prev => {
-        let newX = prev.x + direction.x * speed
-        let newY = prev.y + direction.y * speed
+        const newX = prev.x + direction.x * speed
+        const newY = prev.y + direction.y * speed
         let newDirX = direction.x
         let newDirY = direction.y
 
@@ -65,7 +65,7 @@ export default function NotFound() {
         <h1 className="text-9xl font-bold text-white mb-4">404</h1>
         <h2 className="text-3xl font-bold text-blue-100 mb-6">Page Out of Bounds!</h2>
         <p className="text-blue-200 mb-8 text-lg">
-          Looks like this play went off the field. The page you're looking for has been substituted or doesn't exist.
+          Looks like this play went off the field. The page you are looking for has been substituted or does not exist.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -80,7 +80,7 @@ export default function NotFound() {
       
       {/* Decorative elements */}
       <div className="absolute bottom-4 left-4 text-blue-300/70 text-sm">
-        Ref's Decision: Error 404 - Page Not Found
+        Referencess Decision: Error 404 - Page Not Found
       </div>
       
       {/* Animated goal posts */}

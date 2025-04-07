@@ -3,24 +3,23 @@ import { clerkClient } from "@clerk/clerk-sdk-node"; // ✅ Correct Clerk import
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PUT(req: NextRequest, { params }: any) {
   try {
-    const { id } = await context.params; // ✅ Correctly extract `id`
+    const { id } = await params;
     const { role } = await req.json();
 
-    // Validate role
     if (!["user", "admin"].includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    // Update role in Prisma (Supabase)
+    // Update in Supabase (via Prisma)
     await prisma.user.update({
       where: { id },
       data: { role },
     });
 
-    // Update role in Clerk
+    // Update in Clerk
     await clerkClient.users.updateUser(id, {
       publicMetadata: { role },
     });
@@ -31,26 +30,27 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
     return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
   }
 }
-
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function DELETE(req: NextRequest, { params }: any) {
   try {
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({ where: { id: params.id } });
+    const { id } = await params;
+    const existingUser = await prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Delete from Clerk
-    await clerkClient.users.deleteUser(params.id);
+    await clerkClient.users.deleteUser(id);
 
     // Delete user from Prisma (Supabase)
     await prisma.user.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     // Delete user from Prisma-based leaderboard table
     await prisma.prediction.deleteMany({
-      where: { userId: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: "User deleted successfully" });

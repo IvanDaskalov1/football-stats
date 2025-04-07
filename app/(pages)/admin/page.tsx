@@ -14,6 +14,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { User } from "@/types";
 
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -22,7 +23,7 @@ export default function AdminPage() {
   const { userId } = useAuth();
   const router = useRouter();
 
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userGrowth, setUserGrowth] = useState<{ date: string; totalUsers: number }[]>([]);

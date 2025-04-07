@@ -9,6 +9,7 @@ export async function GET() {
     return NextResponse.json({ predictions })
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch predictions" }, { status: 500 })
+    console.log(error)
   }
 }
 

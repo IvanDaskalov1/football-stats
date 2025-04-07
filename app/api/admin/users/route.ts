@@ -26,5 +26,6 @@ export const GET = async (req: NextRequest) => {
     return NextResponse.json(users);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    console.log(error)
   }
 };

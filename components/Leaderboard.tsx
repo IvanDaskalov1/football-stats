@@ -7,6 +7,11 @@ export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<UserScore[]>([])
   const [loading, setLoading] = useState(true)
 
+  type MatchResult = {
+    home: number
+    away: number
+  }
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -21,7 +26,7 @@ export default function Leaderboard() {
         const matches: Match[] = matchesData.matches || []
 
         // Create a map of match results for quick lookup
-        const matchResults = matches.reduce((acc: Record<number, any>, match: Match) => {
+        const matchResults = matches.reduce((acc: Record<number, MatchResult>, match: Match) => {
           // Only include finished matches
           if (match.status === "FINISHED" && match.score?.fullTime?.home !== null && match.score?.fullTime?.away !== null) {
             acc[match.id] = {
