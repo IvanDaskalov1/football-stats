@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Line } from "react-chartjs-2";
+// import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,7 +26,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userGrowth, setUserGrowth] = useState<{ date: string; totalUsers: number }[]>([]);
+  //const [userGrowth, setUserGrowth] = useState<{ date: string; totalUsers: number }[]>([]);
 
   useEffect(() => {
     async function fetchUserRole() {
@@ -53,16 +53,16 @@ export default function AdminPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [usersRes, growthRes] = await Promise.all([
+        const [usersRes] = await Promise.all([
           fetch("/api/admin/users"),
-          fetch("/api/admin/user-growth"),
+          //fetch("/api/admin/user-growth"),
         ]);
 
         const usersData = await usersRes.json();
-        const growthData = await growthRes.json();
+        //const growthData = await growthRes.json();
 
         setUsers(usersData);
-        setUserGrowth(growthData);
+        //setUserGrowth(growthData);
       } catch (error) {
         console.error("Error fetching users or growth statistics:", error);
       } finally {
@@ -77,27 +77,27 @@ export default function AdminPage() {
   if (userRole !== "admin") return <p>Redirecting...</p>;
 
   // Chart Data for User Growth Over Time
-  const lineChartData = {
-    labels: userGrowth.map((entry) => entry.date), // Dates as labels
-    datasets: [
-      {
-        label: "Total Users Over Time",
-        data: userGrowth.map((entry) => entry.totalUsers), // Cumulative total
-        borderColor: "rgba(75, 192, 192, 1)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        tension: 0.3,
-      },
-    ],
-  };
+//  const lineChartData = {
+//    labels: userGrowth.map((entry) => entry.date), // Dates as labels
+//    datasets: [
+//      {
+//        label: "Total Users Over Time",
+//        data: userGrowth.map((entry) => entry.totalUsers), // Cumulative total
+//        borderColor: "rgba(75, 192, 192, 1)",
+//        backgroundColor: "rgba(75, 192, 192, 0.2)",
+//        tension: 0.3,
+//      },
+//    ],
+//  };
 
-  const chartOptions = {
-    responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
-  };
+  // const chartOptions = {
+  //   responsive: true,
+  //   scales: {
+  //     y: {
+  //       beginAtZero: true,
+  //     },
+  //   },
+  // };
 
   async function changeRole(userId: string, newRole: string) {
     try {
@@ -142,10 +142,10 @@ export default function AdminPage() {
       <h1 className="text-2xl font-bold mb-4">Admin Panel</h1>
 
       {/* ✅ Display User Growth Chart */}
-      <div className="mb-4 p-4 bg-gray-100 border border-gray-300 rounded">
-        <h2 className="text-lg font-semibold mb-2">User Growth Over Time</h2>
-        <Line data={lineChartData} options={chartOptions} />
-      </div>
+      {/* <div className="mb-4 p-4 bg-gray-100 border border-gray-300 rounded"> */}
+        {/* <h2 className="text-lg font-semibold mb-2">User Growth Over Time</h2> */}
+        {/* <Line data={lineChartData} options={chartOptions} /> */}
+      {/* </div> */}
 
       <table className="w-full border-collapse border border-gray-300 mt-4">
         <thead>
